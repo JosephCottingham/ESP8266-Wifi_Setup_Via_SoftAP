@@ -7,7 +7,7 @@
 #include <WiFiUdp.h>
 
 #ifndef APSSID
-#define APSSID "ESP"
+#define APSSID "H2O-WiFi-Unit"
 #define APPSK  ""
 #endif
 const int port = 65035;
@@ -79,7 +79,6 @@ void form(){
   }
   htmlForm += "</select><BR>";
   htmlForm += "<INPUT type=\"text\" name=\"password\" placeholder=\"password\"><BR>";
-  htmlForm += "<INPUT type=\"radio\" name=\"wifiConnect\" value=\"0\">If checked, an attempt to connect to given AP | if not you will be presnted with the data enter form<BR>";
   htmlForm += "<INPUT type=\"submit\" value=\"Send\"> <INPUT type=\"reset\">";
   htmlForm += "</P>";
   htmlForm += "</FORM>";
@@ -125,7 +124,7 @@ void dataSend() {
     udp.endPacket();
   }
   else {
-    Serial.println("\nNOT WORKING SORRY I HATE MYSELF, BREAK ME WITH THE CHEESE GRATER");
+    Serial.println("\nFailed Data Send Attempt");
   }
 }
 //Refreshes the http server if data has not been input and sent
@@ -143,10 +142,10 @@ void handleSubmit()
 {
   String_ssidVal = server.arg("ssid");
   String_passwordVal = server.arg("password");
-  attemptConnection = server.arg("wifiConnect");
   valueText = String_ssidVal + " : " + String_passwordVal;
   write_to_Memory(String_ssidVal, String_passwordVal);
-  if (attemptConnection = "0") {
+  char WiFiSave = (String_ssidVal.charAt(0));
+  if (WiFiSave > 33) {
     attemptConnection = "1";
     WiFi.softAPdisconnect(true);
     wifiConnect();
@@ -236,7 +235,10 @@ void setup(void) {
   Serial.println(String_passwordVal);
   networkSearch();
   form();
-  if (String_ssidVal != "") {
+  Serial.println(String_ssidVal);
+  Serial.println(String_ssidVal.length());
+  char WiFiSave = (String_ssidVal.charAt(0));
+  if (WiFiSave < 33) {
     wifiConnect();
   } else {
     SoftAPConnect();
@@ -247,8 +249,13 @@ void setup(void) {
 void loop(void) {
   form();
   server.handleClient();
-  Serial.println(WiFi.localIP());
-  //delay(5000);
+  if((cycle%10000) == 0){
+    Serial.println("");
+    Serial.print("IP Address:");
+    Serial.println(WiFi.localIP());
+    Serial.print("Cycle Num:");
+    Serial.println(cycle);
+  }
   //dataSend();
   cycle++;
 }
