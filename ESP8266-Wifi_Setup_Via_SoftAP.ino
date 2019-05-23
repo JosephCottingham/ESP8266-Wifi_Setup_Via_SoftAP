@@ -229,6 +229,14 @@ void write_EEPROM(String x, int pos) {
     EEPROM.write(n, x[n - pos]);
   }
 }
+void ICRequestData(){
+  String M
+  if (ESPserial.available()){
+    ESPserial.write(65);
+    M = ESPSerial.read();
+    Serial.println(M);
+  }
+}
 void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
@@ -261,4 +269,5 @@ void loop(void) {
   }
   //dataSend();
   cycle++;
+  ICRequestData();
 }
