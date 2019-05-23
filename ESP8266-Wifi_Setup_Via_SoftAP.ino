@@ -5,6 +5,7 @@
 #include <ESP8266mDNS.h>
 #include <EEPROM.h>
 #include <WiFiUdp.h>
+#include <SoftwareSerial.h>
 
 #ifndef APSSID
 #define APSSID "H2O-WiFi-Unit"
@@ -34,6 +35,7 @@ char Char_passVal[20];
 String htmlForm;
 ESP8266WebServer server(80);
 WiFiUDP udp;
+SoftwareSerial ESPserial(20, 19); // RX | TX
 
 //MemRead is a string value that is pulled from the flash of the esp
 //This value is going to hold both the ssid and password.
@@ -229,6 +231,7 @@ void write_EEPROM(String x, int pos) {
 }
 void setup(void) {
   Serial.begin(115200);
+  ESPserial.begin(9600);
   EEPROM.begin(512);
   WifiAuthConfig();
   Serial.println(String_ssidVal);
