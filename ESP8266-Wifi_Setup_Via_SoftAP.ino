@@ -229,14 +229,14 @@ void write_EEPROM(String x, int pos) {
     EEPROM.write(n, x[n - pos]);
   }
 }
-void ICRequestData(){
-  String M
-  if (ESPserial.available()){
-    ESPserial.write(65);
-    M = ESPSerial.read();
-    Serial.println(M);
-  }
-}
+//void ICRequestData(){
+//  String M;
+//  if (ESPserial.available()){
+//    ESPserial.write(65);
+////    M = ESPSerial.read();
+//    Serial.println(M);
+//  }
+//}
 void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
@@ -258,9 +258,8 @@ void setup(void) {
 }
 
 void loop(void) {
-  form();
   server.handleClient();
-  if((cycle%10000) == 0){
+  if((cycle%10000000) == 0){
     Serial.println("");
     Serial.print("IP Address:");
     Serial.println(WiFi.localIP());
@@ -269,5 +268,6 @@ void loop(void) {
   }
   //dataSend();
   cycle++;
-  ICRequestData();
+//  ICRequestData();
 }
+// Put a button on the site to refresh the html
