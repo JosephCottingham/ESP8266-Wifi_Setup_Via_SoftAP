@@ -79,7 +79,7 @@ void form(){
     htmlForm += WiFi.SSID(i);
     htmlForm += "</option>";
   }
-  htmlForm += "</select><BR>";
+  htmlForm += "</select><button class=\"reload\">reload</button><BR>";
   htmlForm += "<INPUT type=\"text\" name=\"password\" placeholder=\"password\"><BR>";
   htmlForm += "<INPUT type=\"submit\" value=\"Send\"> <INPUT type=\"reset\">";
   htmlForm += "</P>";
@@ -131,6 +131,10 @@ void dataSend() {
 }
 //Refreshes the http server if data has not been input and sent
 void handleRoot() {
+  if (server.hasArg("reload")){
+    //form();
+    Serial.print("working");
+  }
   if (server.hasArg("ssid")) {
     handleSubmit();
   }
