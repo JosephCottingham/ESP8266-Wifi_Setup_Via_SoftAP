@@ -35,7 +35,7 @@ char Char_passVal[20];
 String htmlForm;
 ESP8266WebServer server(80);
 WiFiUDP udp;
-SoftwareSerial ESPserial(20, 19); // RX | TX
+//SoftwareSerial ESPserial(20, 19); // RX | TX
 
 //MemRead is a string value that is pulled from the flash of the esp
 //This value is going to hold both the ssid and password.
@@ -239,7 +239,7 @@ void write_EEPROM(String x, int pos) {
 //}
 void setup(void) {
   Serial.begin(115200);
-  ESPserial.begin(9600);
+//  ESPserial.begin(9600);
   EEPROM.begin(512);
   WifiAuthConfig();
   Serial.println(String_ssidVal);
@@ -258,16 +258,17 @@ void setup(void) {
 }
 
 void loop(void) {
+//form();
   server.handleClient();
-  if((cycle%10000000) == 0){
-    Serial.println("");
-    Serial.print("IP Address:");
-    Serial.println(WiFi.localIP());
-    Serial.print("Cycle Num:");
-    Serial.println(cycle);
-  }
+//  if((cycle%10000000) == 0){
+//    Serial.println("");
+//    Serial.print("IP Address:");
+//    Serial.println(WiFi.localIP());
+//    Serial.print("Cycle Num:");
+//    Serial.println(cycle);
+//  }
   //dataSend();
-  cycle++;
+//  cycle++;
 //  ICRequestData();
 }
 // Put a button on the site to refresh the html
