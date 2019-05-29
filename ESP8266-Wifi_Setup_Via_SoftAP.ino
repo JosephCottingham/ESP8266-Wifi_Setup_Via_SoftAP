@@ -25,6 +25,7 @@ String valueText = "none";
 boolean wifiConnectAttempt = false;
 boolean APOpen = false;
 boolean WifiOpen = false;
+int data[16];
 int mainLoop = 0;
 int ssidAddress = 10;
 int passAddress = 50;
@@ -35,7 +36,7 @@ char Char_passVal[20];
 String htmlForm;
 ESP8266WebServer server(80);
 WiFiUDP udp;
-//SoftwareSerial ESPserial(20, 19); // RX | TX
+SoftwareSerial ESPserial(5, 4); // RX | TX
 
 //MemRead is a string value that is pulled from the flash of the esp
 //This value is going to hold both the ssid and password.
@@ -79,7 +80,7 @@ void form(){
     htmlForm += WiFi.SSID(i);
     htmlForm += "</option>";
   }
-  htmlForm += "</select><button class=\"reload\">reload</button><BR>";
+  htmlForm += "</select><BR>";
   htmlForm += "<INPUT type=\"text\" name=\"password\" placeholder=\"password\"><BR>";
   htmlForm += "<INPUT type=\"submit\" value=\"Send\"> <INPUT type=\"reset\">";
   htmlForm += "</P>";
@@ -131,10 +132,6 @@ void dataSend() {
 }
 //Refreshes the http server if data has not been input and sent
 void handleRoot() {
-  if (server.hasArg("reload")){
-    //form();
-    Serial.print("working");
-  }
   if (server.hasArg("ssid")) {
     handleSubmit();
   }
@@ -233,17 +230,25 @@ void write_EEPROM(String x, int pos) {
     EEPROM.write(n, x[n - pos]);
   }
 }
-//void ICRequestData(){
-//  String M;
-//  if (ESPserial.available()){
-//    ESPserial.write(65);
-////    M = ESPSerial.read();
-//    Serial.println(M);
-//  }
-//}
+void ICRequestData(){
+  ESPserial.write(65);
+  Serial.println("Write");
+  int bytes_read = 0;
+  while(bytes_read < 9){
+    if(ESPserial.available() > 0){
+      data[bytes_read] = ESPserial.read();
+      bytes_read++;
+    }
+  }
+  for(int i; i < 16; i++){
+  Serial.print(data[i]);
+  Serial.print(",");
+  }
+  //Serial.println("ESPserial Unavilable");
+}
 void setup(void) {
   Serial.begin(115200);
-//  ESPserial.begin(9600);
+  ESPserial.begin(9600);
   EEPROM.begin(512);
   WifiAuthConfig();
   Serial.println(String_ssidVal);
@@ -252,6 +257,7 @@ void setup(void) {
   form();
   Serial.println(String_ssidVal);
   Serial.println(String_ssidVal.length());
+  pinMode(14, OUTPUT);
   char WiFiSave = (String_ssidVal.charAt(0));
   if (WiFiSave < 33) {
     wifiConnect();
@@ -262,17 +268,16 @@ void setup(void) {
 }
 
 void loop(void) {
-//form();
+  form();
   server.handleClient();
-//  if((cycle%10000000) == 0){
-//    Serial.println("");
-//    Serial.print("IP Address:");
-//    Serial.println(WiFi.localIP());
-//    Serial.print("Cycle Num:");
-//    Serial.println(cycle);
-//  }
+  if((cycle%10000) == 0){
+    Serial.println("");
+    Serial.print("IP Address:");
+    Serial.println(WiFi.localIP());
+    Serial.print("Cycle Num:");
+    Serial.println(cycle);
+    ICRequestData();  
+  }
   //dataSend();
-//  cycle++;
-//  ICRequestData();
+  cycle++;
 }
-// Put a button on the site to refresh the html
