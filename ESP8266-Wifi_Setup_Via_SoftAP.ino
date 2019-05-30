@@ -25,7 +25,7 @@ String valueText = "none";
 boolean wifiConnectAttempt = false;
 boolean APOpen = false;
 boolean WifiOpen = false;
-int data[16];
+byte data[16];
 int mainLoop = 0;
 int ssidAddress = 10;
 int passAddress = 50;
@@ -233,16 +233,19 @@ void write_EEPROM(String x, int pos) {
 void ICRequestData(){
   ESPserial.write(65);
   Serial.println("Write");
-  int bytes_read = 0;
-  while(bytes_read < 9){
+  byte bytes_read = 0;
+  Serial.println(ESPserial.available());
+  while(bytes_read < 16){
+    Serial.println(ESPserial.available());
     if(ESPserial.available() > 0){
       data[bytes_read] = ESPserial.read();
       bytes_read++;
     }
   }
-  for(int i; i < 16; i++){
-  Serial.print(data[i]);
-  Serial.print(",");
+  Serial.println(ESPserial.available());
+  for(int asdf = 0; asdf < 16; asdf++){
+    Serial.print(data[asdf]);
+    Serial.print(",");
   }
   //Serial.println("ESPserial Unavilable");
 }
