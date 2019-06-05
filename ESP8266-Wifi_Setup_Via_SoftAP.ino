@@ -5,7 +5,7 @@
 #include <ESP8266mDNS.h>
 #include <EEPROM.h>
 #include <WiFiUdp.h>
-#include <SoftwareSerial.h>
+#include <ESPSoftwareSerial.h>
 
 #ifndef APSSID
 #define APSSID "H2O-WiFi-Unit"
@@ -232,24 +232,30 @@ void write_EEPROM(String x, int pos) {
 }
 void ICRequestData(){
   ESPserial.write(65);
-  Serial.println("Write");
+  Serial.println("\nWrite");
   byte bytes_read = 0;
-  while(bytes_read < 16){
-    if(ESPserial.available() > 0){
-//      data[bytes_read] = ESPserial.read();
-        Serial.println(ESPserial.read());
-    }
+  delay(100);
+    
+  noInterrupts();
+  while(ESPserial.available() > 0){
+    data[bytes_read] = ESPserial.read();
     bytes_read++;
   }
+  interrupts();
+
   for(int asdf = 0; asdf < 16; asdf++){
-    Serial.print(data[asdf]);
-    Serial.print(",");
+      Serial.print(data[asdf], DEC);
+      if(asdf != 15){
+        Serial.print("~");
+      }
   }
-  //Serial.println("ESPserial Unavilable");
+    Serial.println("\n");
+ 
 }
 void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
+  ESPserial.write(1);
   EEPROM.begin(512);
   WifiAuthConfig();
   Serial.println(String_ssidVal);
@@ -258,9 +264,8 @@ void setup(void) {
   form();
   Serial.println(String_ssidVal);
   Serial.println(String_ssidVal.length());
-  pinMode(14, OUTPUT);
   char WiFiSave = (String_ssidVal.charAt(0));
-  if (WiFiSave < 33) {
+  if (WiFiSave > 32 && WiFiSave < 122) {
     wifiConnect();
   } else {
     SoftAPConnect();
@@ -271,13 +276,13 @@ void setup(void) {
 void loop(void) {
   form();
   server.handleClient();
-  if((cycle%10000) == 0){
+  if((cycle%1000) == 0){
     Serial.println("");
     Serial.print("IP Address:");
     Serial.println(WiFi.localIP());
     Serial.print("Cycle Num:");
     Serial.println(cycle);
-    ICRequestData();  
+    ICRequestData(); 
   }
   //dataSend();
   cycle++;
