@@ -106,12 +106,6 @@ void dataSend() {
   JsonObject& root = jsonBuffer.createObject();
   JsonArray& rxpk = root.createNestedArray("rxpk");
   JsonObject& data = rxpk.createNestedObject();
-  data["time"] = cycle;
-  data["datr"] = "125000";
-  data["codr"] = "5";
-  data["lsnr"] =  "11.5";
-  data["rssi"] = "-47";
-  data["freq"] = "433920000";
   data["data"] = "aG9tZSBoYXMgam9pbmVkIHRoZSBjaGF0IQ==";
 
   WiFi.printDiag(Serial);
