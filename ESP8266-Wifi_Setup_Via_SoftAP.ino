@@ -11,35 +11,18 @@
 #define APSSID "H2O-WiFi-Unit"
 #define APPSK  ""
 #endif
+
+ESP8266WebServer server(80);
+WiFiUDP udp;
+SoftwareSerial ESPserial(5, 4); 
+
 const int port = 65035;
 //const char url[] = "10.1.10.253";
 const char url[] = "ioth2o.com";
 const char *APssid = APSSID;
 const char *APpassword = APPSK;
-String String_ssidVal = "";
-String String_passwordVal;
-String String_ssidVal1 = "";
-String String_passwordVal1;
-String attemptConnection = "1";
-String valueText = "none";
-boolean wifiConnectAttempt = false;
-boolean APOpen = false;
-boolean WifiOpen = false;
-byte data[16];
-int mainLoop = 0;
-int ssidAddress = 10;
-int passAddress = 50;
-int cycle = 0;
-int n;
-char Char_ssidVal[20];
-char Char_passVal[20];
-String htmlForm;
-ESP8266WebServer server(80);
-WiFiUDP udp;
-SoftwareSerial ESPserial(5, 4); // RX | TX
 
-//MemRead is a string value that is pulled from the flash of the esp
-//This value is going to hold both the ssid and password.
+
 String MemRead(int l, int p) {
   String temp;
   for (int n = p; n < l + p; ++n)
@@ -54,11 +37,68 @@ String MemRead(int l, int p) {
   }
   return temp;
 }
+boolean ValidSSID(String S){
+  if (S.charAt(0) > 32 && S.charAt(0) < 122) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
-//This is a char array that will hold the html form code to be hosted on the AP's
-//http server
-void form(){
-  htmlForm = "<!DOCTYPE HTML>";
+
+void DeviceConfig(){
+  networkSearchPrint();
+  SoftAPConnect();  
+  while(handleSubmit()){
+    delay(100);
+    server.handleClient();
+  }
+  WiFi.disconnect(true);
+  Serial.println("Setup Complete");
+}
+
+void networkSearchPrint() {
+  Serial.print("Scan start ... ");
+  int n = WiFi.scanNetworks();
+  Serial.println(n);
+  Serial.println(" network(s) found");
+  for (int i = 0; i < n; i++){
+    Serial.println(i);
+    Serial.println(WiFi.SSID(i));
+  }
+  Serial.println();
+}
+
+void handleNotFound()
+{
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/plain", message);
+}
+void SoftAPConnect() {
+  WiFi.softAP(APssid, APpassword);
+  Serial.println("");
+  Serial.print("Hosting: ");
+  Serial.println(APssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.softAPIP());
+  server.on("/", handleRoot);
+  server.onNotFound(handleNotFound);
+  server.begin();
+  Serial.println("Whats UP :>");
+}
+
+String htmlForm(){
+  String htmlForm = "<!DOCTYPE HTML>";
   htmlForm += "<html>";
   htmlForm += "<head>";
   htmlForm += "<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">";
@@ -73,7 +113,7 @@ void form(){
   htmlForm += "<P>";
   htmlForm += "<select required name=\"ssid\">";
   htmlForm += "<option value=\"\">None</option>";
-  for (int i = 0; i < n; i++){
+  for (int i = 0; i < WiFi.scanNetworks(); i++){
     htmlForm += "<option value=\"";
     htmlForm += WiFi.SSID(i);
     htmlForm += "\">";
@@ -87,26 +127,82 @@ void form(){
   htmlForm += "</FORM>";
   htmlForm += "</body>";
   htmlForm += "</html>";
-}
-void networkSearch() {
-  Serial.print("Scan start ... ");
-  n = WiFi.scanNetworks();
-  Serial.print(n);
-  Serial.println(n);
-  Serial.println(" network(s) found");
-  for (int i = 0; i < n; i++){
-    Serial.println(i);
-    Serial.println(WiFi.SSID(i));
-  }
-  Serial.println();
+  return htmlForm;
 }
 
-void dataSend() {
+boolean handleSubmit(){
+  String ssidWifi = server.arg("ssid");
+  String passwordWifi = server.arg("password");
+  if (ssidWifi.charAt(0) > 32 && ssidWifi.charAt(0) < 122 && wifiConnect(passwordWifi, passwordWifi)) {
+    writeMemory(ssidWifi, passwordWifi);
+    WiFi.softAPdisconnect(true);
+    return false;
+  }
+  else{
+  return true;
+  }
+}
+void writeMemory(String s, String p) {
+  s += ";";
+  writeEEPROM(s, 10);
+  p += ";";
+  writeEEPROM(p, 110);
+  EEPROM.commit();
+}
+void writeEEPROM(String x, int pos) {
+  for (int n = pos; n < x.length() + pos; n++) {
+    EEPROM.write(n, x[n - pos]);
+  }
+}
+boolean wifiConnect(String s, String p) {
+  WiFi.begin(s, p);
+  Serial.println("");
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+    i++;
+    if (i == 300) {
+      WiFi.disconnect();
+      Serial.println("Wifi Connection Failed, Starting AP");
+      return false;
+    }
+    return true;
+  }
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(s);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+String ICRequestData(){
+  ESPserial.write(65);
+  Serial.println("\nWrite");
+  byte bytes_read = 0;
+  byte data[16];
+  delay(100);  
+  noInterrupts();
+  while(ESPserial.available() > 0){
+    data[bytes_read] = ESPserial.read();
+    bytes_read++;
+  }
+  interrupts();
+  
+  for(int a = 0; a < 16; a++){
+      Serial.print(data[a], DEC);
+      if(a != 15){
+        Serial.print("~");
+      }
+  }
+  Serial.println("\n");
+  return String((char *)data);  
+}
+void dataSend(String d) {
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
   JsonArray& rxpk = root.createNestedArray("rxpk");
   JsonObject& data = rxpk.createNestedObject();
-  data["data"] = "aG9tZSBoYXMgam9pbmVkIHRoZSBjaGF0IQ==";
+  data["data"] = d;
 
   WiFi.printDiag(Serial);
 
@@ -130,154 +226,29 @@ void handleRoot() {
     handleSubmit();
   }
   else {
-    server.send(200, "text/html", htmlForm);
+    server.send(200, "text/html", htmlForm());
   }
-}
-
-//pulls the data from the http server, disconnects the ap, and starts connection to local wifi network
-void handleSubmit()
-{
-  String_ssidVal = server.arg("ssid");
-  String_passwordVal = server.arg("password");
-  valueText = String_ssidVal + " : " + String_passwordVal;
-  write_to_Memory(String_ssidVal, String_passwordVal);
-  char WiFiSave = (String_ssidVal.charAt(0));
-  if (WiFiSave > 33) {
-    attemptConnection = "1";
-    WiFi.softAPdisconnect(true);
-    wifiConnect();
-  }
-}
-// handles the attempt to connect with a network and ends attempt if fails after 5 minutes
-void wifiConnect() {
-  WiFi.begin(String_ssidVal, String_passwordVal);
-  Serial.println("");
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
-    Serial.print(".");
-    i++;
-    if (i == 300) {
-      WiFi.disconnect();
-      Serial.println("Wifi Connection Failed, Starting AP");
-      SoftAPConnect();
-      break;
-    }
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(String_ssidVal);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-
-void returnOK()
-{
-  server.sendHeader("Connection", "close");
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "text/plain", "OK\r\n");
-}
-
-void handleNotFound()
-{
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
-}
-
-void SoftAPConnect() {
-  WiFi.softAP(APssid, APpassword);
-  Serial.println("");
-  Serial.print("Hosting: ");
-  Serial.println(APssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.softAPIP());
-  server.on("/", handleRoot);
-  server.onNotFound(handleNotFound);
-  server.begin();
-}
-void WifiAuthConfig() {
-  String_ssidVal = MemRead(30, 10);
-  String_passwordVal = MemRead(30, 110);
-}
-//Manages the writing of strings to memory
-void write_to_Memory(String s, String p) {
-  s += ";";
-  write_EEPROM(s, 10);
-  p += ";";
-  write_EEPROM(p, 110);
-  EEPROM.commit();
-}
-//write to memory
-void write_EEPROM(String x, int pos) {
-  for (int n = pos; n < x.length() + pos; n++) {
-    EEPROM.write(n, x[n - pos]);
-  }
-}
-void ICRequestData(){
-  ESPserial.write(65);
-  Serial.println("\nWrite");
-  byte bytes_read = 0;
-  delay(100);
-    
-  noInterrupts();
-  while(ESPserial.available() > 0){
-    data[bytes_read] = ESPserial.read();
-    bytes_read++;
-  }
-  interrupts();
-
-  for(int asdf = 0; asdf < 16; asdf++){
-      Serial.print(data[asdf], DEC);
-      if(asdf != 15){
-        Serial.print("~");
-      }
-  }
-    Serial.println("\n");
- 
 }
 void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
-  ESPserial.write(1);
-  EEPROM.begin(512);
-  WifiAuthConfig();
-  Serial.println(String_ssidVal);
-  Serial.println(String_passwordVal);
-  networkSearch();
-  form();
-  Serial.println(String_ssidVal);
-  Serial.println(String_ssidVal.length());
-  char WiFiSave = (String_ssidVal.charAt(0));
-  if (WiFiSave > 32 && WiFiSave < 122) {
-    wifiConnect();
-  } else {
-    SoftAPConnect();
+  EEPROM.begin(512);  
+  String ssidWifi = MemRead(30, 10);
+  if(ValidSSID(ssidWifi) == false){  
+    DeviceConfig();
   }
-  //dataSend();
 }
 
 void loop(void) {
-  form();
-  server.handleClient();
-  if((cycle%1000) == 0){
-    Serial.println("");
-    Serial.print("IP Address:");
-    Serial.println(WiFi.localIP());
-    Serial.print("Cycle Num:");
-    Serial.println(cycle);
-    ICRequestData(); 
+  String ssidWifi = MemRead(30, 10);
+  String passwordWifi = MemRead(30, 110);
+  String data = ICRequestData();
+  Serial.println(data);
+  if(data.charAt(0) != 0 && wifiConnect(ssidWifi, passwordWifi)){
+    //dataSend(data);
   }
-  //dataSend();
-  cycle++;
+  else{
+    Serial.println("Data Collect Fail or Network Connection Failure");
+  }
+  
 }
