@@ -36,7 +36,7 @@ char Char_passVal[20];
 String htmlForm;
 ESP8266WebServer server(80);
 WiFiUDP udp;
-SoftwareSerial ESPserial(5, 4); // RX | TX
+SoftwareSerial ESPserial(5, 4, SERIAL_8E1); // RX | TX
 
 //MemRead is a string value that is pulled from the flash of the esp
 //This value is going to hold both the ssid and password.
@@ -141,8 +141,7 @@ void handleRoot() {
 }
 
 //pulls the data from the http server, disconnects the ap, and starts connection to local wifi network
-void handleSubmit()
-{
+void handleSubmit() {
   String_ssidVal = server.arg("ssid");
   String_passwordVal = server.arg("password");
   valueText = String_ssidVal + " : " + String_passwordVal;
@@ -178,15 +177,13 @@ void wifiConnect() {
 }
 
 
-void returnOK()
-{
+void returnOK(){
   server.sendHeader("Connection", "close");
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", "OK\r\n");
 }
 
-void handleNotFound()
-{
+void handleNotFound() {
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -212,11 +209,13 @@ void SoftAPConnect() {
   server.onNotFound(handleNotFound);
   server.begin();
 }
+
 void WifiAuthConfig() {
   String_ssidVal = MemRead(30, 10);
   String_passwordVal = MemRead(30, 110);
 }
 //Manages the writing of strings to memory
+
 void write_to_Memory(String s, String p) {
   s += ";";
   write_EEPROM(s, 10);
@@ -225,12 +224,15 @@ void write_to_Memory(String s, String p) {
   EEPROM.commit();
 }
 //write to memory
+
 void write_EEPROM(String x, int pos) {
   for (int n = pos; n < x.length() + pos; n++) {
     EEPROM.write(n, x[n - pos]);
   }
 }
+
 void ICRequestData(){
+  
   ESPserial.write(65);
   Serial.println("Write");
   byte bytes_read = 0;
@@ -249,6 +251,7 @@ void ICRequestData(){
   }
   //Serial.println("ESPserial Unavilable");
 }
+
 void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
