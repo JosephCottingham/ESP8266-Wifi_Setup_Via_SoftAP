@@ -236,15 +236,13 @@ void ICRequestData(){
   ESPserial.write(65);
   Serial.println("Write");
   byte bytes_read = 0;
-  Serial.println(ESPserial.available());
   while(bytes_read < 16){
-    Serial.println(ESPserial.available());
     if(ESPserial.available() > 0){
-      data[bytes_read] = ESPserial.read();
-      bytes_read++;
+//      data[bytes_read] = ESPserial.read();
+        Serial.println(ESPserial.read());
     }
+    bytes_read++;
   }
-  Serial.println(ESPserial.available());
   for(int asdf = 0; asdf < 16; asdf++){
     Serial.print(data[asdf]);
     Serial.print(",");
