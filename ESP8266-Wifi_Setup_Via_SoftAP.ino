@@ -233,6 +233,7 @@ void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
   EEPROM.begin(512);  
+  
   String ssidWifi = MemRead(30, 10);
   if(ValidSSID(ssidWifi) == false){  
     DeviceConfig();
