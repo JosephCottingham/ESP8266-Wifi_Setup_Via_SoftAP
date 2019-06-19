@@ -14,7 +14,7 @@
 
 ESP8266WebServer server(80);
 WiFiClient tcpClient;
-SoftwareSerial ESPserial(5, 4); 
+SoftwareSerial ESPserial(5, 4);
 
 const int port = 65035;
 //const char url[] = "10.1.10.253";
@@ -38,7 +38,7 @@ String MemRead(int l, int p) {
   }
   return temp;
 }
-boolean ValidSSID(String S){
+boolean ValidSSID(String S) {
   if (S.charAt(0) > 32 && S.charAt(0) < 122) {
     return true;
   } else {
@@ -47,10 +47,11 @@ boolean ValidSSID(String S){
 }
 
 
-void DeviceConfig(){
+void DeviceConfig() {
+  form = htmlForm();
   networkSearchPrint();
-  SoftAPConnect();  
-  while(handleSubmit()){
+  SoftAPConnect();
+  while (handleSubmit()) {
     delay(25);
     server.handleClient();
   }
@@ -62,7 +63,7 @@ void networkSearchPrint() {
   int n = WiFi.scanNetworks();
   Serial.println(n);
   Serial.println(" network(s) found");
-  for (int i = 0; i < n; i++){
+  for (int i = 0; i < n; i++) {
     Serial.println(i);
     Serial.println(WiFi.SSID(i));
   }
@@ -96,7 +97,7 @@ void SoftAPConnect() {
   server.begin();
 }
 
-String htmlForm(){
+String htmlForm() {
   String htmlForm = "<!DOCTYPE HTML>";
   htmlForm += "<html>";
   htmlForm += "<head>";
@@ -112,26 +113,26 @@ String htmlForm(){
   htmlForm += "<P>";
   htmlForm += "<select required name=\"ssid\">";
   htmlForm += "<option value=\"\">None</option>";
-  int c=4;
+  int c = 4;
   String ssidList[45];
-  for (int i = 0; i < 3; i++){
+  for (int i = 0; i < 3; i++) {
     c = WiFi.scanNetworks();
-    for (int j = 0; j < c; j++){
+    for (int j = 0; j < c; j++) {
       ssidList[j] = WiFi.SSID(j);
     }
   }
-  for(int i = 0; i < 45; i++){
-    for(int j = i+1; j < 45; j++){
-      if(ssidList[j] == ssidList[i]){
+  for (int i = 0; i < 45; i++) {
+    for (int j = i + 1; j < 45; j++) {
+      if (ssidList[j] == ssidList[i]) {
         ssidList[j] = "";
       }
     }
   }
-  for(int i = 0; i < 45; i++){
+  for (int i = 0; i < 45; i++) {
     Serial.println(ssidList[i]);
   }
-  for (int i = 0; i < 45; i++){
-    if(ssidList[i] == "") continue;
+  for (int i = 0; i < 45; i++) {
+    if (ssidList[i] == "") continue;
     htmlForm += "<option value=\"";
     htmlForm += ssidList[i];
     htmlForm += "\">";
@@ -149,17 +150,21 @@ String htmlForm(){
   return htmlForm;
 }
 
-boolean handleSubmit(){
+boolean handleSubmit() {
   String ssidWifi = server.arg("ssid");
   String passwordWifi = server.arg("password");
-  if (ssidWifi.charAt(0) > 32 && ssidWifi.charAt(0) < 122 && wifiConnect(ssidWifi, passwordWifi)) {
-    Serial.println("Correct");
-    writeMemory(ssidWifi, passwordWifi);
-    Serial.println(ssidWifi);
-    Serial.println(passwordWifi);
-    return false;
+  if (ValidSSID(ssidWifi)) {
+    if (wifiConnect(ssidWifi, passwordWifi)) {
+      WiFi.softAPdisconnect(true);
+      writeMemory(ssidWifi, passwordWifi);
+      Serial.print("ssid:");
+      Serial.println(ssidWifi);
+      Serial.print("password:");
+      Serial.println(passwordWifi);
+      return false;
+    }
   }
-  else{
+  else {
     return true;
   }
 }
@@ -176,19 +181,11 @@ void writeEEPROM(String x, int pos) {
   }
 }
 boolean wifiConnect(String s, String p) {
-  Serial.println("1");
-  WiFi.softAPdisconnect(true);
-  Serial.println("2");
-  Serial.println(s);
-  Serial.println(p);
   WiFi.begin(s, p);
-  Serial.println("3");
   Serial.println("");
   int i = 0;
   delay(10);
-  Serial.println("got her");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.println("got em");
     delay(100);
     Serial.print(".");
     i++;
@@ -197,37 +194,33 @@ boolean wifiConnect(String s, String p) {
       Serial.println("Wifi Connection Failed, Starting AP");
       return false;
     }
-    return true;
   }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(s);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  return true;
 }
-String ICRequestData(){
+
+String ICRequestData() {
   ESPserial.begin(9600);
   ESPserial.write(65);
   Serial.println("\nWrite");
   byte bytes_read = 0;
   byte data[16];
-  delay(100);  
+  delay(100);
   noInterrupts();
-  while(ESPserial.available() > 0){
+  while (ESPserial.available() > 0) {
     data[bytes_read] = ESPserial.read();
     bytes_read++;
   }
   interrupts();
-  
-  for(int a = 0; a < 16; a++){
-      Serial.print(data[a], DEC);
-      if(a != 15){
-        Serial.print("~");
-      }
+
+  for (int a = 0; a < 16; a++) {
+    Serial.print(data[a], DEC);
+    if (a != 15) {
+      Serial.print("~");
+    }
   }
   Serial.println("\n");
   ESPserial.end();
-  return String((char *)data);  
+  return String((char *)data);
 }
 void dataSend(String d) {
   StaticJsonBuffer<200> jsonBuffer;
@@ -242,11 +235,11 @@ void dataSend(String d) {
   root.printTo(f1);
   char f2[f1.length()];
   f1.toCharArray(f2, f1.length() + 1);
-
-  if (tcpClient.connect(url, port)) {
+  Serial.print(f1);
+  if (tcpClient.connect("10.1.10.142", 21)) {
     tcpClient.println(f1);
     Serial.println("\nSENT");
-//    tcpClient.disconnect();
+    tcpClient.stop(); //fix this
   }
   else {
     Serial.println("\nFailed Data Send Attempt");
@@ -261,14 +254,14 @@ void handleRoot() {
     server.send(200, "text/html", form);
   }
 }
-void memClear(String s, String p){
+void memClear(String s, String p) {
   String clearS = "";
   String clearP = "";
   Serial.println(s.length());
-  for (int i = 0; i < s.length(); i++){
+  for (int i = 0; i < s.length(); i++) {
     clearS += (char)0;
   }
-  for (int i = 0; i < p.length(); i++){
+  for (int i = 0; i < p.length(); i++) {
     clearP += (char)0;
   }
   writeMemory(clearS, clearP);
@@ -277,10 +270,9 @@ void memClear(String s, String p){
 void setup(void) {
   Serial.begin(115200);
   EEPROM.begin(512);
-  form = htmlForm();
   pinMode(MemResetPin, INPUT);
   String ssidWifi = MemRead(30, 10);
-  if(ValidSSID(ssidWifi) == false){  
+  if (ValidSSID(ssidWifi) == false) {
     DeviceConfig();
   }
 }
@@ -288,21 +280,22 @@ void setup(void) {
 void loop(void) {
   String ssidWifi = MemRead(30, 10);
   String passwordWifi = MemRead(30, 110);
-  if(digitalRead(MemResetPin) == 0){
+  if (digitalRead(MemResetPin) == 0) {
     memClear(ssidWifi, passwordWifi);
     ESP.restart();
   }
+  delay(1000);
   String data = ICRequestData();
   Serial.println(data);
   Serial.println(ssidWifi);
   Serial.println(passwordWifi);
-  if(data.charAt(15) == 255){
-    if(wifiConnect(ssidWifi, passwordWifi)){
-    //dataSend(data);
+  if (data.charAt(15) == 255) {
+    if (wifiConnect(ssidWifi, passwordWifi)) {
+      dataSend(data);
       WiFi.disconnect();
     }
   }
-  else{
+  else {
     Serial.println("Data Collect Fail or Network Connection Failure");
   }
 }
