@@ -12,6 +12,7 @@
 #define APPSK  ""
 #endif
 
+
 ESP8266WebServer server(80);
 WiFiClient tcpClient;
 SoftwareSerial ESPserial(5, 4);
@@ -24,6 +25,9 @@ const char *APpassword = APPSK;
 String UnHtmlForm = "";
 int MemResetPin = 13;
 String form = "";
+String ssidWifi;
+String passwordWifi;
+
 String MemRead(int l, int p) {
   String temp;
   for (int n = p; n < l + p; ++n)
@@ -48,6 +52,9 @@ boolean ValidSSID(String S) {
 
 
 void DeviceConfig() {
+  WiFi.forceSleepWake();
+  delay(3);
+  WiFi.mode( WIFI_STA );
   form = htmlForm();
   networkSearchPrint();
   SoftAPConnect();
@@ -56,6 +63,9 @@ void DeviceConfig() {
     server.handleClient();
   }
   Serial.println("Setup Complete");
+  WiFi.mode( WIFI_OFF );
+  WiFi.forceSleepBegin();
+  delay(3);
 }
 
 void networkSearchPrint() {
@@ -268,34 +278,42 @@ void memClear(String s, String p) {
 }
 
 void setup(void) {
+  WiFi.mode( WIFI_OFF );
+  WiFi.forceSleepBegin();
+  delay(3);
   Serial.begin(115200);
   EEPROM.begin(512);
   pinMode(MemResetPin, INPUT);
-  String ssidWifi = MemRead(30, 10);
+  ssidWifi = MemRead(30, 10);
+  passwordWifi = MemRead(30, 110);
   if (ValidSSID(ssidWifi) == false) {
     DeviceConfig();
   }
 }
 
 void loop(void) {
-  String ssidWifi = MemRead(30, 10);
-  String passwordWifi = MemRead(30, 110);
   if (digitalRead(MemResetPin) == 0) {
     memClear(ssidWifi, passwordWifi);
     ESP.restart();
   }
-  delay(1000);
   String data = ICRequestData();
   Serial.println(data);
   Serial.println(ssidWifi);
   Serial.println(passwordWifi);
   if (data.charAt(15) == 255) {
+    WiFi.forceSleepWake();
+    delay(3);
+    WiFi.mode( WIFI_STA );
     if (wifiConnect(ssidWifi, passwordWifi)) {
       dataSend(data);
       WiFi.disconnect();
     }
+    WiFi.mode( WIFI_OFF );
+    WiFi.forceSleepBegin();
+    delay(3);
   }
   else {
     Serial.println("Data Collect Fail or Network Connection Failure");
   }
+  delay(1000);
 }
