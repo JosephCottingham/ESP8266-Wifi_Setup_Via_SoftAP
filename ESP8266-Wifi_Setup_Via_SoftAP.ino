@@ -6,6 +6,7 @@
 #include <EEPROM.h>
 #include <WiFiUdp.h>
 #include <ESPSoftwareSerial.h>
+#include "DHTesp.h"
 
 #ifndef APSSID
 #define APSSID "H2O-WiFi-Unit"
@@ -15,6 +16,7 @@
 ESP8266WebServer server(80);
 WiFiClient tcpClient;
 SoftwareSerial ESPserial(5, 4); 
+DHTesp dht;
 
 const int port = 65035;
 //const char url[] = "10.1.10.253";
@@ -200,27 +202,29 @@ boolean wifiConnect(String s, String p) {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 }
-String ICRequestData(){
-  ESPserial.write(65);
-  Serial.println("\nWrite");
-  byte bytes_read = 0;
-  byte data[16];
-  delay(100);  
-  noInterrupts();
-  while(ESPserial.available() > 0){
-    data[bytes_read] = ESPserial.read();
-    bytes_read++;
-  }
-  interrupts();
-  
-  for(int a = 0; a < 16; a++){
-      Serial.print(data[a], DEC);
-      if(a != 15){
-        Serial.print("~");
-      }
+String RequestData(){
+  float humidity = dht.getHumidity();
+  float temperature = dht.getTemperature();
+  float waterVal = digitalRead(4);
+  for(int i = 0; i < 100; i++){
+    delay(dht.getMinimumSamplingPeriod());
+    Serial.println("\nWrite");
+    Serial.print(dht.getStatusString());
+    Serial.print("\t");
+    Serial.print(humidity, 1);
+    Serial.print("\t\t");
+    Serial.print(temperature, 1);
+    Serial.print("\t\t");
+    Serial.print(dht.toFahrenheit(temperature), 1);
+    Serial.print("\t\t");
+    Serial.print(dht.computeHeatIndex(temperature, humidity, false), 1);
+    Serial.print("\t\t");
+    Serial.print(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
+    Serial.print("\t\t");
+    Serial.println(waterVal);
   }
   Serial.println("\n");
-  return String((char *)data);  
+  return String("data");  
 }
 void dataSend(String d) {
   StaticJsonBuffer<200> jsonBuffer;
@@ -271,6 +275,8 @@ void setup(void) {
   Serial.begin(115200);
   ESPserial.begin(9600);
   EEPROM.begin(512);
+  pinMode(A0, INPUT);
+  dht.setup(5, DHTesp::DHT11);
   pinMode(MemResetPin, INPUT);
   UnHtmlForm = htmlForm();  
   String ssidWifi = MemRead(30, 10);
@@ -286,7 +292,7 @@ void loop(void) {
     memClear(ssidWifi, passwordWifi);
     ESP.restart();
   }
-  String data = ICRequestData();
+  String data = RequestData();
   Serial.println(data);
   Serial.println(ssidWifi);
   Serial.println(passwordWifi);
