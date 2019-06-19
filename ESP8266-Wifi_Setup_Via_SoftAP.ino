@@ -288,6 +288,7 @@ void setup(void) {
 void loop(void) {
   String ssidWifi = MemRead(30, 10);
   String passwordWifi = MemRead(30, 110);
+  Serial.println(digitalRead(MemResetPin));
   if(digitalRead(MemResetPin) == 0){
     memClear(ssidWifi, passwordWifi);
     ESP.restart();
