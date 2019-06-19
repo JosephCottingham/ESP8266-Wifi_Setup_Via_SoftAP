@@ -23,7 +23,7 @@ const char *APssid = APSSID;
 const char *APpassword = APPSK;
 String UnHtmlForm = "";
 int MemResetPin = 13;
-
+String form = "";
 String MemRead(int l, int p) {
   String temp;
   for (int n = p; n < l + p; ++n)
@@ -152,12 +152,11 @@ String htmlForm(){
 boolean handleSubmit(){
   String ssidWifi = server.arg("ssid");
   String passwordWifi = server.arg("password");
-  if (ssidWifi.charAt(0) > 32 && ssidWifi.charAt(0) < 122 && wifiConnect(passwordWifi, passwordWifi)) {
+  if (ssidWifi.charAt(0) > 32 && ssidWifi.charAt(0) < 122 && wifiConnect(ssidWifi, passwordWifi)) {
     Serial.println("Correct");
     writeMemory(ssidWifi, passwordWifi);
     Serial.println(ssidWifi);
     Serial.println(passwordWifi);
-    WiFi.softAPdisconnect(true);
     return false;
   }
   else{
@@ -177,7 +176,13 @@ void writeEEPROM(String x, int pos) {
   }
 }
 boolean wifiConnect(String s, String p) {
+  Serial.println("1");
+  WiFi.softAPdisconnect(true);
+  Serial.println("2");
+  Serial.println(s);
+  Serial.println(p);
   WiFi.begin(s, p);
+  Serial.println("3");
   Serial.println("");
   int i = 0;
   delay(10);
@@ -201,6 +206,7 @@ boolean wifiConnect(String s, String p) {
   Serial.println(WiFi.localIP());
 }
 String ICRequestData(){
+  ESPserial.begin(9600);
   ESPserial.write(65);
   Serial.println("\nWrite");
   byte bytes_read = 0;
@@ -220,6 +226,7 @@ String ICRequestData(){
       }
   }
   Serial.println("\n");
+  ESPserial.end();
   return String((char *)data);  
 }
 void dataSend(String d) {
@@ -251,7 +258,7 @@ void handleRoot() {
     handleSubmit();
   }
   else {
-    server.send(200, "text/html", htmlForm());
+    server.send(200, "text/html", form);
   }
 }
 void memClear(String s, String p){
@@ -269,10 +276,9 @@ void memClear(String s, String p){
 
 void setup(void) {
   Serial.begin(115200);
-  ESPserial.begin(9600);
   EEPROM.begin(512);
+  form = htmlForm();
   pinMode(MemResetPin, INPUT);
-  UnHtmlForm = htmlForm();  
   String ssidWifi = MemRead(30, 10);
   if(ValidSSID(ssidWifi) == false){  
     DeviceConfig();
@@ -299,5 +305,4 @@ void loop(void) {
   else{
     Serial.println("Data Collect Fail or Network Connection Failure");
   }
-  
 }
