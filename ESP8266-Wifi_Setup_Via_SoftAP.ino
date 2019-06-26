@@ -19,6 +19,8 @@ WiFiClientSecure tcpClient;
 PubSubClient client(tcpClient);
 SoftwareSerial ESPserial(5, 4);
 
+//const char *c = "-----BEGIN CERTIFICATE-----\nMIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNV\nBAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQD\nDAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/\nTGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQ\nYps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1\n+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2\nqqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQ\ns1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9L\nc9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYD\nVR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zAN\nBgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vX\noLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+A\nePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb\n1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxk\nbsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra6\n2IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==\n-----END CERTIFICATE-----";
+BearSSL::X509List cert("-----BEGIN CERTIFICATE-----\nMIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNV\nBAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQD\nDAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/\nTGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQ\nYps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1\n+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2\nqqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQ\ns1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9L\nc9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYD\nVR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zAN\nBgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vX\noLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+A\nePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb\n1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxk\nbsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra6\n2IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==\n-----END CERTIFICATE-----");
 
 const char *APssid = APSSID;
 const char *APpassword = APPSK;
@@ -95,28 +97,10 @@ void loadCerts() {
   else {
     Serial.println("Success to open ca");
   }
+  
   delay(1000);
-  Serial.println(ca);
+  
   // Set server CA file
-//  String c = "-----BEGIN CERTIFICATE-----\n";
-//  c += "MIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNV\n";
-//  c += "BAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQD\n";
-//  c += "DAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/\n";
-//  c += "TGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQ\n";
-//  c += "Yps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1\n";
-//  c += "+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2\n";
-//  c += "qqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQ\n";
-//  c += "s1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9L\n";
-//  c += "c9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYD\n";
-//  c += "VR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zAN\n";
-//  c += "BgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vX\n";
-//  c += "oLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+A\n";
-//  c += "ePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb\n";
-//  c += "1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxk\n";
-//  c += "bsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra6\n";
-//  c += "2IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==\n";
-//  c += "-----END CERTIFICATE-----";
-//  Serial.println(c);
   if(tcpClient.loadCACert(ca)) {
     Serial.println("ca loaded");
   }
@@ -418,7 +402,7 @@ void loop(void) {
     delay(1);
     WiFi.mode( WIFI_STA );
     if (wifiConnect(ssidWifi, passwordWifi)) {
-      loadCerts();
+//      loadCerts();
       dataSend(data);
       WiFi.disconnect();
     }
