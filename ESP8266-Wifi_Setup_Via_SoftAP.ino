@@ -1,47 +1,132 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <EEPROM.h>
 #include <WiFiUdp.h>
+#include <PubSubClient.h>
 #include <ESPSoftwareSerial.h>
+#include <FS.h>
 
 #ifndef APSSID
 #define APSSID "H2O-WiFi-Unit"
 #define APPSK  ""
 #endif
 
-
 ESP8266WebServer server(80);
-WiFiClient tcpClient;
+WiFiClientSecure tcpClient;
+PubSubClient client(tcpClient);
 SoftwareSerial ESPserial(5, 4);
 
-const int port = 65035;
-//const char url[] = "10.1.10.253";
-const char url[] = "ioth2o.com";
+
 const char *APssid = APSSID;
 const char *APpassword = APPSK;
-String UnHtmlForm = "";
 int MemResetPin = 13;
 String form = "";
 String ssidWifi;
 String passwordWifi;
+const char* mqttServer = "10.1.10.53";
+const int mqttPort = 8883;
+const char* mqttUser = "";
+const char* mqttPassword = "";
 
 String MemRead(int l, int p) {
   String temp;
-  for (int n = p; n < l + p; ++n)
-  {
+  for (int n = p; n < l + p; ++n) {
     if (char(EEPROM.read(n)) != ';') {
-      if (isWhitespace(char(EEPROM.read(n)))) {
-
-      } else temp += String(char(EEPROM.read(n)));
-
+      if (isWhitespace(char(EEPROM.read(n)))) {}
+      else temp += String(char(EEPROM.read(n)));
     } else n = l + p;
-
   }
   return temp;
 }
+
+void loadCerts() {
+   if (!SPIFFS.begin()) {
+    Serial.println("Failed to mount file system");
+    return;
+  }
+  Serial.println("spiffs val haskdjhfjksadfhkjsadfjksahdfkjwsdjkfhdasjkdfkasdhfkashdkfjhsakdjfhskadhfksadhfksahdfkshdkfjhsakdfha");
+  Serial.println(SPIFFS.exists("/CA.crt"));
+//  // Load client certificate file from SPIFFS
+//  File cert = SPIFFS.open("/esp.der", "r"); //replace esp.der with your uploaded file name
+//  if (!cert) {
+//    Serial.println("Failed to open cert file");
+//  }
+//  else {
+//    Serial.println("Success to open cert file");
+//  }
+//
+//  delay(1000);
+//
+//  // Set client certificate
+//  if (wifiClient.loadCertificate(cert)) {
+//    Serial.println("cert loaded");
+//  }
+//  else {
+//    Serial.println("cert not loaded");
+//  }
+//
+//  // Load client private key file from SPIFFS
+//  File private_key = SPIFFS.open("/espkey.der", "r"); //replace espkey.der with your uploaded file name
+//  if (!private_key) {
+//    Serial.println("Failed to open private cert file");
+//  }
+//  else {
+//    Serial.println("Success to open private cert file");
+//  }
+//
+//  delay(1000);
+//
+//  // Set client private key
+//  if (wifiClient.loadPrivateKey(private_key)) {
+//    Serial.println("private key loaded");
+//  }
+//  else {
+//    Serial.println("private key not loaded");
+//  }
+
+  // Load CA file from SPIFFS
+  File ca = SPIFFS.open("/CA.crt", "r");
+  if (!ca) {
+    Serial.println("Failed to open ca ");
+  }
+  else {
+    Serial.println("Success to open ca");
+  }
+  delay(1000);
+  Serial.println(ca);
+  // Set server CA file
+//  String c = "-----BEGIN CERTIFICATE-----\n";
+//  c += "MIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNV\n";
+//  c += "BAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQD\n";
+//  c += "DAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/\n";
+//  c += "TGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQ\n";
+//  c += "Yps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1\n";
+//  c += "+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2\n";
+//  c += "qqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQ\n";
+//  c += "s1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9L\n";
+//  c += "c9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYD\n";
+//  c += "VR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zAN\n";
+//  c += "BgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vX\n";
+//  c += "oLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+A\n";
+//  c += "ePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb\n";
+//  c += "1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxk\n";
+//  c += "bsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra6\n";
+//  c += "2IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==\n";
+//  c += "-----END CERTIFICATE-----";
+//  Serial.println(c);
+  if(tcpClient.loadCACert(ca)) {
+    Serial.println("ca loaded");
+  }
+  else {
+    Serial.println("ca failed");
+  }
+  SPIFFS.end();
+}
+
+//Checks the first char of a String to see if its valid ASCII
 boolean ValidSSID(String S) {
   if (S.charAt(0) > 32 && S.charAt(0) < 122) {
     return true;
@@ -50,10 +135,9 @@ boolean ValidSSID(String S) {
   }
 }
 
-
 void DeviceConfig() {
   WiFi.forceSleepWake();
-  delay(3);
+  delay(1);
   WiFi.mode( WIFI_STA );
   form = htmlForm();
   networkSearchPrint();
@@ -65,9 +149,10 @@ void DeviceConfig() {
   Serial.println("Setup Complete");
   WiFi.mode( WIFI_OFF );
   WiFi.forceSleepBegin();
-  delay(3);
+  delay(1);
 }
 
+//Searches for available networks and then prints them out
 void networkSearchPrint() {
   Serial.print("Scan start ... ");
   int n = WiFi.scanNetworks();
@@ -80,8 +165,7 @@ void networkSearchPrint() {
   Serial.println();
 }
 
-void handleNotFound()
-{
+void handleNotFound() {
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -95,6 +179,7 @@ void handleNotFound()
   }
   server.send(404, "text/plain", message);
 }
+
 void SoftAPConnect() {
   WiFi.softAP(APssid, APpassword);
   Serial.println("");
@@ -178,6 +263,7 @@ boolean handleSubmit() {
     return true;
   }
 }
+
 void writeMemory(String s, String p) {
   s += ";";
   writeEEPROM(s, 10);
@@ -185,12 +271,15 @@ void writeMemory(String s, String p) {
   writeEEPROM(p, 110);
   EEPROM.commit();
 }
+
 void writeEEPROM(String x, int pos) {
   for (int n = pos; n < x.length() + pos; n++) {
     EEPROM.write(n, x[n - pos]);
   }
 }
+
 boolean wifiConnect(String s, String p) {
+  WiFi.persistent( false );
   WiFi.begin(s, p);
   Serial.println("");
   int i = 0;
@@ -232,6 +321,7 @@ String ICRequestData() {
   ESPserial.end();
   return String((char *)data);
 }
+
 void dataSend(String d) {
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
@@ -244,17 +334,37 @@ void dataSend(String d) {
   String f1 = "";
   root.printTo(f1);
   char f2[f1.length()];
+  Serial.print(f1);
   f1.toCharArray(f2, f1.length() + 1);
   Serial.print(f1);
-  if (tcpClient.connect("10.1.10.142", 21)) {
-    tcpClient.println(f1);
-    Serial.println("\nSENT");
-    tcpClient.stop(); //fix this
+
+  client.setServer(mqttServer, mqttPort);
+  int l = 0; // l is the value that will timeout the MQTT connection after a certain number of tries
+  while (!client.connected()) {
+    Serial.println("Connecting to MQTT...");
+    if (client.connect("ESP8266Client")) {
+      Serial.println("connected");  
+    } else {
+      Serial.print("failed with state ");
+      Serial.println(client.state());
+    }
+    if(l >= 5) break;
+    l++;
+    delay(500);
   }
-  else {
-    Serial.println("\nFailed Data Send Attempt");
-  }
+  client.publish("Heartbeat", f2);
+
+  //  client.publish("Heartbeat", f1);
+//  if (tcpClient.connect("10.1.10.142", 21)) {
+//    tcpClient.println(f1);
+//    Serial.println("\nSENT");
+//    tcpClient.stop(); //fix this
+//  }
+//  else {
+//    Serial.println("\nFailed Data Send Attempt");
+//  }
 }
+
 //Refreshes the http server if data has not been input and sent
 void handleRoot() {
   if (server.hasArg("ssid")) {
@@ -264,6 +374,7 @@ void handleRoot() {
     server.send(200, "text/html", form);
   }
 }
+
 void memClear(String s, String p) {
   String clearS = "";
   String clearP = "";
@@ -277,12 +388,14 @@ void memClear(String s, String p) {
   writeMemory(clearS, clearP);
 }
 
+//Turns WiFi off and reads ssid and password from EEPROM, then calls DeviceConfig if the ssid is valid
 void setup(void) {
   WiFi.mode( WIFI_OFF );
   WiFi.forceSleepBegin();
-  delay(3);
+  delay(1);
   Serial.begin(115200);
   EEPROM.begin(512);
+  writeMemory("RedSparrow", "solutions");
   pinMode(MemResetPin, INPUT);
   ssidWifi = MemRead(30, 10);
   passwordWifi = MemRead(30, 110);
@@ -302,18 +415,19 @@ void loop(void) {
   Serial.println(passwordWifi);
   if (data.charAt(15) == 255) {
     WiFi.forceSleepWake();
-    delay(3);
+    delay(1);
     WiFi.mode( WIFI_STA );
     if (wifiConnect(ssidWifi, passwordWifi)) {
+      loadCerts();
       dataSend(data);
       WiFi.disconnect();
     }
     WiFi.mode( WIFI_OFF );
     WiFi.forceSleepBegin();
-    delay(3);
+    delay(1);
   }
   else {
     Serial.println("Data Collect Fail or Network Connection Failure");
   }
-  delay(1000);
+  delay(100);
 }
