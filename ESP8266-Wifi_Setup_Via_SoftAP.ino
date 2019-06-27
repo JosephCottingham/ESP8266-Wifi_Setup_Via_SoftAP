@@ -8,6 +8,7 @@
 #include <PubSubClient.h>
 #include <ESPSoftwareSerial.h>
 #include <FS.h>
+#include <time.h>
 
 #ifndef APSSID
 #define APSSID "H2O-WiFi-Unit"
@@ -15,12 +16,14 @@
 #endif
 
 ESP8266WebServer server(80);
-WiFiClientSecure tcpClient;
-PubSubClient client(tcpClient);
+
+
 SoftwareSerial ESPserial(5, 4);
 
-//const char *c = "-----BEGIN CERTIFICATE-----\nMIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNV\nBAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQD\nDAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/\nTGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQ\nYps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1\n+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2\nqqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQ\ns1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9L\nc9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYD\nVR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zAN\nBgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vX\noLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+A\nePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb\n1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxk\nbsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra6\n2IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==\n-----END CERTIFICATE-----";
-BearSSL::X509List cert("-----BEGIN CERTIFICATE-----\nMIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNV\nBAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQD\nDAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/\nTGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQ\nYps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1\n+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2\nqqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQ\ns1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9L\nc9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYD\nVR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zAN\nBgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vX\noLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+A\nePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb\n1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxk\nbsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra6\n2IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==\n-----END CERTIFICATE-----");
+//const char ca[] PROGMEM = "-----BEGIN CERTIFICATE-----MIIC7jCCAdagAwIBAgIJAPxjsOZYFWheMA0GCSqGSIb3DQEBDQUAMAwxCjAIBgNVBAMMAS4wHhcNMTkwNjI2MTUzNTMzWhcNMzIwNjIyMTUzNTMzWjAMMQowCAYDVQQDDAEuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAncIz5QZ9n5c0Wbo/TGX8GSejBzghP/UCpBAeeFXd/WjnNOcibtZXXS/0SSjknRgKT4C/EF3PneE7C5kQYps5HDTScK1DKRTc9fbuaIjHz2PlNF+t+Hl+kjxZqgIzKQv8LgYYdMeQ1fhh3zG1+zy5DOJSh0E2d5vU6GoboAs6FqIQq6s1Jp47jdCZhajXiSKWxL615ipIizNuNEw2qqk5JiA9AAOGqRNh33F1bw2Y7YaN2py9U/nKhE9drKK76xE/NElKRK3DRnR44vJQs1s+s4WOhTO6+s/yrJ5kK0GTqlluENwUSePpin2VL1KFfOKK2I5l6pF3QjVRgz9Lc9e74QIDAQABo1MwUTAdBgNVHQ4EFgQUiSKXEQua1Mv5nDdS24wkAl/hJjQwHwYDVR0jBBgwFoAUiSKXEQua1Mv5nDdS24wkAl/hJjQwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQ0FAAOCAQEAO3MUq1BJJbsto4yxny+1VWgrDjglv5DVfRtRI7vXoLdLWWNJJzQpKfTK+yaV9wSWCXxL4kMRkqFjyMZIIGOUyu2slGX8HiTVzMLvYy+AePjlZmH+0OqfLlpng8DFumSq7YHxOQmD9D5KVIzulemD6R4Sw2KoQfmcDSfRwPSb1iPSFKAs7gXh4lubtBuxzL8adODK1Usz9YQ/4mUP8abj7h5wu+fm7NGpCqj1qAxkbsKtQaVsIXh9kTNTMwhlIfA3Uqaa72UW6e5c1cHMuChVzEsqdpWBEPcNj69bkra62IZ+kNjQGD4OXqUSGSV8HVnPqeouhW9uRZmCGBq8rEcGhA==-----END CERTIFICATE-----";
+//X509List caCertX509(ca);
+//WiFiClientSecure tcpClient;
+//PubSubClient mqttClient(tcpClient);
 
 const char *APssid = APSSID;
 const char *APpassword = APPSK;
@@ -29,7 +32,7 @@ String form = "";
 String ssidWifi;
 String passwordWifi;
 const char* mqttServer = "10.1.10.53";
-const int mqttPort = 8883;
+const int mqttPort = 1883;
 const char* mqttUser = "";
 const char* mqttPassword = "";
 
@@ -322,21 +325,21 @@ void dataSend(String d) {
   f1.toCharArray(f2, f1.length() + 1);
   Serial.print(f1);
 
-  client.setServer(mqttServer, mqttPort);
+  mqttClient.setServer(mqttServer, mqttPort);
   int l = 0; // l is the value that will timeout the MQTT connection after a certain number of tries
-  while (!client.connected()) {
+  while (!mqttClient.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (client.connect("ESP8266Client")) {
+    if (mqttClient.connect("ESP8266Client")) {
       Serial.println("connected");  
     } else {
       Serial.print("failed with state ");
-      Serial.println(client.state());
+      Serial.println(mqttClient.state());
     }
     if(l >= 5) break;
     l++;
     delay(500);
   }
-  client.publish("Heartbeat", f2);
+  mqttClient.publish("Heartbeat", f2);
 
   //  client.publish("Heartbeat", f1);
 //  if (tcpClient.connect("10.1.10.142", 21)) {
@@ -358,7 +361,23 @@ void handleRoot() {
     server.send(200, "text/html", form);
   }
 }
+time_t setClock() {
+  configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
 
+  Serial.print("Waiting for NTP time sync: ");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
+  }
+  Serial.println("");
+  struct tm timeinfo;
+  gmtime_r(&now, &timeinfo);
+  Serial.print("Current time: ");
+  Serial.print(asctime(&timeinfo));
+  return now;
+}
 void memClear(String s, String p) {
   String clearS = "";
   String clearP = "";
@@ -379,6 +398,8 @@ void setup(void) {
   delay(1);
   Serial.begin(115200);
   EEPROM.begin(512);
+//  tcpClient.setTrustAnchors(&caCertX509);         /* Load CA cert into trust store */
+//  tcpClient.allowSelfSignedCerts();               /* Enable self-signed cert support */ 
   writeMemory("RedSparrow", "solutions");
   pinMode(MemResetPin, INPUT);
   ssidWifi = MemRead(30, 10);
