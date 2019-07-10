@@ -148,7 +148,7 @@ void networkSearchPrint() {
   Serial.println();
 }
 
-String htmlForm() {
+String htmlForm() {                       //generates the html for the network config webpage (includes the scaning and inclusion of new local network options)
   String htmlForm = "<!DOCTYPE HTML>";
   htmlForm += "<html>";
   htmlForm += "<head>";
@@ -165,8 +165,8 @@ String htmlForm() {
   htmlForm += "<select required name=\"ssid\">";
   htmlForm += "<option value=\"\">None</option>";
   int c = 4;
-  String ssidList[45];
-  for (int i = 0; i < 3; i++) {
+  String ssidList[45];              //holds the ssid values of local networks (max is 46 ssids)
+  for (int i = 0; i < 3; i++) {     //scans the local avavible networks three times
     c = WiFi.scanNetworks();
     for (int j = 0; j < c; j++) {
       ssidList[j] = WiFi.SSID(j);
@@ -282,18 +282,18 @@ boolean wifiConnect(String s, String p) {
  ****************************************************************************************/
  
 String ICRequestData() {
-  ESPserial.begin(9600);
-  ESPserial.write(65);
+  ESPserial.begin(9600);                  //starts the serial com line between the ESP and the NS7000 (9600 baudrate)
+  ESPserial.write(65);                    //value taht the Pic is waiting to see before sending the data.
   Serial.println("\nWrite");
   byte bytesRead = 0;
   byte data[16];
   delay(100);
-  noInterrupts();
+  noInterrupts();                         //Disable and other process that may negtavilty affect the abilty to read. 
   while (ESPserial.available() > 0) {
     data[bytesRead] = ESPserial.read();
     bytesRead++;
   }
-  interrupts();
+  interrupts();                         //Reenable the interrupt operations as the timesinsitivity of operatios as decreased. 
 
   for (int a = 0; a < 16; a++) {
     Serial.print(data[a], DEC);
@@ -302,7 +302,7 @@ String ICRequestData() {
     }
   }
   Serial.println("\n");
-  ESPserial.end();
+  ESPserial.end();                        //Closing of the serial com line between the esp and the ns7000 in an attepmt to lower power draw
   return String((char *)data);
 }
 
@@ -343,15 +343,15 @@ void deviceConfig() {
   WiFi.forceSleepWake();
   delay(1);
   WiFi.mode( WIFI_STA );
-  form = htmlForm();
+  form = htmlForm();                      //holds webpage html
   networkSearchPrint();
-  softAPConnect();
+  softAPConnect();                        //sets up a WiFi AP
   while (handleSubmit()) {
     delay(25);
     server.handleClient();
   }
   Serial.println("Setup Complete");
-  WiFi.mode( WIFI_OFF );
+  WiFi.mode( WIFI_OFF );                    //Disable the network part of the esp to allow lower power consumption
   WiFi.forceSleepBegin();
   delay(3);
 }
@@ -372,23 +372,23 @@ void setup(void) {
 
 void loop(void) {
   if (digitalRead(MemResetPin) == 0) {
-    memClear(ssidWifi, passwordWifi);
-    ESP.restart();
+    memClear(ssidWifi, passwordWifi);       //Overwrite the ESP Flash where SSID and Password is stored 
+    ESP.restart();                          //Restart the ESP
   }
-  String data = ICRequestData();
+  String data = ICRequestData();            //Sets data to the data sent from the NS7000
   Serial.println(data);
   Serial.println(ssidWifi);
   Serial.println(passwordWifi);
-  if (data.charAt(15) == 255) {
-    WiFi.forceSleepWake();
+  if (data.charAt(15) == 255) {             //Check if the ending byte is correct therefore confirming the data is atleast structured correct
+    WiFi.forceSleepWake();                  //wake up the networking capibilites of the ESP
     delay(1);
-    WiFi.mode( WIFI_STA );
+    WiFi.mode( WIFI_STA );                  //standard wifi config
     if (wifiConnect(ssidWifi, passwordWifi)) {
       dataSend(data);
       WiFi.disconnect();
     }
-    WiFi.mode( WIFI_OFF );
-    WiFi.forceSleepBegin();
+    WiFi.mode( WIFI_OFF );                  //disable wifi config
+    WiFi.forceSleepBegin();                 //put networking capibilites of the esp to sleep
     delay(1);
   }
   else {
